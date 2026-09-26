@@ -577,6 +577,26 @@ describe("reconcile stall detection", () => {
     if (!result.ok) expect(result.error.code).toBe("RECONCILE_STALLED");
     expect(polls()).toBe(6);
   });
+
+  it("does NOT stall when stallThreshold is omitted (disabled at this layer)", async () => {
+    const { adapter, polls } = stalledAdapter("stuck");
+    let t = 0;
+    // reconcileUntil reads `opts.stallThreshold ?? 0`, so omitting the option
+    // disables stall detection here: an anchor stuck on one status forever has
+    // to reach the deadline timeout rather than return RECONCILE_STALLED.
+    // (execute() applies the production default of 10 one level up in run.ts.)
+    const result = await reconcileUntil(adapter, "tx_omitted_threshold", {
+      now: () => t,
+      sleep: async (ms) => {
+        t += ms;
+      },
+      deadlineMs: t + 500,
+      pollMs: 100,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("SETTLEMENT_TIMEOUT");
+    expect(polls()).toBeGreaterThan(1);
+  });
 });
 
 describe("state machine", () => {

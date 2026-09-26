@@ -139,6 +139,8 @@ export async function reconcileUntil(
   let firstStatus: string | undefined;
   let lastStatus = "unknown";
   let sameCount = 0;
+  // Omitted or 0 disables stall detection at this layer; execute() applies the
+  // production default of 10 one level up (run.ts) and passes it down.
   const threshold = opts.stallThreshold ?? 0;
   let poll = 0;
   const startedAt = opts.now();
